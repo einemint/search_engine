@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class StatisticsResponse {
+public class StartIndexingResponse {
     private boolean result;
-    private StatisticsData statistics;
+    private String error;
 }
