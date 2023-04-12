@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="WARN">
+    <appenders>
+        <File name="exceptions" fileName="C:\Users\Ekaterina Smirnova\IdeaProjects\graduation_project\search_engine\logs\fatal.log" immediateFlush="true">
+            <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <LevelRangeFilter minlevel="fatal" maxlevel="fatal" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
+
+        <File name="info" fileName="C:\Users\Ekaterina Smirnova\IdeaProjects\graduation_project\search_engine\logs\info.log" immediateFlush="true">
+            <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <LevelRangeFilter minlevel="info" maxlevel="info" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
+    </appenders>
+
+    <loggers>
+        <Root level="all">
+            <AppenderRef ref="exceptions" level="fatal"/>
+            <AppenderRef ref="info" level="info"/>
+        </Root>
+    </loggers>
+</configuration>
