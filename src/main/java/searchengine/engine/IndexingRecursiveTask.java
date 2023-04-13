@@ -1,23 +1,17 @@
 package searchengine.engine;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import searchengine.model.IndexingStatus;
-
 import org.apache.commons.validator.routines.UrlValidator;
-
 import org.apache.logging.log4j.core.Logger;
-
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import searchengine.model.IndexingStatus;
 import searchengine.services.PageInfoService;
 import searchengine.services.SiteInfoService;
 
 import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
@@ -25,8 +19,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     private static volatile Logger logger;
 
     private static SiteInfoService siteInfoService;
