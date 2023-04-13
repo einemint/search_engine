@@ -1,7 +1,8 @@
 package searchengine.engine;
 
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
-    private static volatile Logger logger;
+    private static volatile Logger logger = LogManager.getRootLogger();
 
     private static SiteInfoService siteInfoService;
     private static PageInfoService pageInfoService;

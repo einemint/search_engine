@@ -1,6 +1,7 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -14,6 +15,7 @@ import java.util.concurrent.ForkJoinPool;
 @RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {
     private ForkJoinPool forkJoinPool = new ForkJoinPool();
+    @Autowired
     private SitesList sitesList;
     private boolean isIndexing = false;
 
