@@ -60,6 +60,7 @@ public class IndexingServiceImpl implements IndexingService {
             while (forkJoinPool.isTerminating()) {
                 if (!forkJoinPool.isTerminating()) {
                     stopForkJoinPool();
+                    isIndexing = false;
                 }
             }
 
@@ -77,7 +78,6 @@ public class IndexingServiceImpl implements IndexingService {
         }
         else {
             response.setResult(false);
-            response.setError("Индексация не запущена");
         }
 
         return response;
@@ -86,9 +86,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public boolean stopIndexing() {
         if (isIndexing) {
-            if (forkJoinPool.isTerminating()) {
-                stopForkJoinPool();
-            }
+            stopForkJoinPool();
 
             return true;
         }
@@ -101,7 +99,7 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private  void stopForkJoinPool() {
-        forkJoinPool.shutdown();
+        forkJoinPool.shutdownNow();
         isIndexing = false;
     }
 }
