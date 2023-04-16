@@ -1,16 +1,18 @@
-package searchengine.engine;
+package searchengine.services;
 
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+import searchengine.config.Referrer;
+import searchengine.config.UserAgent;
 import searchengine.model.IndexingStatus;
-import searchengine.services.PageInfoService;
-import searchengine.services.SiteInfoService;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -20,11 +22,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
-    private static volatile Logger logger = LogManager.getRootLogger();
-
-    private static SiteInfoService siteInfoService;
-    private static PageInfoService pageInfoService;
-
+    private SiteInfoService siteInfoService;
+    private PageInfoService pageInfoService;
+    private UserAgent userAgent;
+    private Referrer referrer;
     private URL url;
     private static UrlValidator urlValidator = new UrlValidator();
     private static List<String> allLinks = new ArrayList<>();
@@ -33,25 +34,37 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
 
     private Connection.Response response;
     private Document document;
-    private static int siteId = 0;
+    private static int siteId;
     private IndexingStatus indexingStatus;
     private String lastError;
     private Elements links = new Elements();
 
     private String siteUrl;
     private String formattedSiteUrl;
-    private static String siteRegex = "";
-    private static Pattern pattern;
-    private Matcher matcher;
+    private List<String> urlList;
+    private List<Pattern> patternList = new ArrayList<>();
+    private List<Matcher> matcherList = new ArrayList<>();
+
+    private boolean isMatch = true;
     private String content;
     private int code;
 
-    public IndexingRecursiveTask(String siteUrl) {
+    public IndexingRecursiveTask(SiteInfoService siteInfoService, PageInfoService pageInfoService, List<String> urlList, String siteUrl,
+                                 UserAgent userAgent, Referrer referrer) {
+        this.siteInfoService = siteInfoService;
+        this.pageInfoService = pageInfoService;
+        this.userAgent = userAgent;
+        this.referrer = referrer;
+
+        this.urlList = urlList;
+
         this.siteUrl = siteUrl;
 
-        if (siteRegex.isEmpty()) {
-            this.siteRegex = siteUrl;
-            this.pattern = Pattern.compile(siteRegex);
+        for (String urlAddress : urlList) {
+            this.patternList.add(Pattern.compile(urlAddress));
+        }
+        for (Pattern pattern : patternList) {
+            this.matcherList.add(pattern.matcher(siteUrl));
         }
     }
 
@@ -60,21 +73,25 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         try {
             Thread.sleep(600);
         } catch (Exception exception) {
-            logger.fatal(exception.getStackTrace());
+            exception.printStackTrace();
         }
+
+        isInnerPage();
 
         if (parseUrl(siteUrl)) {
             code = response.statusCode();
             formattedSiteUrl = url.getPath();
             links = document.select("a[href]");
-            matcher = pattern.matcher(siteUrl);
 
-            if (!formattedSiteUrl.isEmpty() && code != 0 && matcher.find()) {
+            if (formattedSiteUrl.isEmpty() && isMatch && code != 0) {
+                siteId = siteInfoService.saveSite(indexingStatus, lastError, siteUrl, document.title());
+            } else if (!formattedSiteUrl.isEmpty() && isMatch && code != 0) {
                 pageInfoService.savePage(siteId, formattedSiteUrl, code, content);
+                siteInfoService.updateSite(siteId, indexingStatus, lastError);
+            }
 
-                if (!links.isEmpty()) {
-                    addTask(links);
-                }
+            if (!links.isEmpty()) {
+                addTask(links);
             }
         }
         addResultsFromTasks(taskList);
@@ -95,7 +112,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
             String linkAddress = link.attr("abs:href");
 
             if (!allLinks.contains(linkAddress) && !linkAddress.contains("#")) {
-                IndexingRecursiveTask task = new IndexingRecursiveTask(linkAddress);
+                IndexingRecursiveTask task = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, linkAddress, userAgent, referrer);
                 task.fork();
                 taskList.add(task);
             }
@@ -108,12 +125,12 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
             indexingStatus = IndexingStatus.INDEXING;
             try {
                 url = new URL(siteUrl);
-                response = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent("Daimyo's Search Bot")
-                        .referrer("http://www.google.com")
+                response = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
+                        .referrer(referrer.getReferrer())
                         .execute();
                 if (response.statusCode() == 200) {
-                    document = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent("Daimyo's Search Bot")
-                            .referrer("http://www.google.com")
+                    document = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
+                            .referrer(referrer.getReferrer())
                             .get();
                     content = document.html();
                     lastError = "NULL";
@@ -123,16 +140,23 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
                     indexingStatus = IndexingStatus.FAILED;
                     lastError = "Ошибка индексации: главная страница сайта недоступна";
                 }
-                siteInfoService.saveSite(siteId, indexingStatus, lastError, siteUrl, document.title());
 
                 return true;
             } catch (Exception exception) {
-                logger.fatal(exception.getStackTrace());
+                exception.printStackTrace();
 
                 return false;
             }
         }
 
         return false;
+    }
+
+    private void isInnerPage() {
+        for (Matcher matcher : matcherList) {
+            if (matcher.find()) {
+                isMatch = true;
+            }
+        }
     }
 }

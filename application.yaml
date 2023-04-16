@@ -22,3 +22,5 @@ indexing-settings:
       name: Skillbox
     - url: https://www.playback.ru
       name: PlayBack.Ru
+  user-agent: einemint's search bot
+  referrer: http://www.google.com

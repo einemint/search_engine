@@ -2,23 +2,36 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import searchengine.config.Referrer;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.config.UserAgent;
 import searchengine.dto.statistics.StartIndexingResponse;
 import searchengine.dto.statistics.StopIndexingResponse;
-import searchengine.engine.IndexingRecursiveTask;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {
+    @Autowired
+    private SiteInfoService siteInfoService;
+    @Autowired
+    private PageInfoService pageInfoService;
     private ForkJoinPool forkJoinPool = new ForkJoinPool();
     @Autowired
     private SitesList sitesList;
+    @Autowired
+    private UserAgent userAgent;
+    @Autowired
+    private Referrer referrer;
+    private List<String> urlList = new ArrayList<>();
     private boolean isIndexing = false;
-
     @Override
     public StartIndexingResponse getStartIndexing() {
         StartIndexingResponse response = new StartIndexingResponse();
@@ -38,14 +51,15 @@ public class IndexingServiceImpl implements IndexingService {
         if (!sitesList.getSites().isEmpty() && !isIndexing) {
             isIndexing = true;
 
-            for (Site site : sitesList.getSites()) {
-                forkJoinPool.invoke(new IndexingRecursiveTask(site.getUrl()));
+            urlList = sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList());
 
-                while (forkJoinPool.isTerminating()) {
-                    if (!forkJoinPool.isTerminating()) {
-                        forkJoinPool.shutdown();
-                        isIndexing = false;
-                    }
+            for (String url : urlList) {
+                addTask(url);
+            }
+
+            while (forkJoinPool.isTerminating()) {
+                if (!forkJoinPool.isTerminating()) {
+                    stopForkJoinPool();
                 }
             }
 
@@ -73,13 +87,21 @@ public class IndexingServiceImpl implements IndexingService {
     public boolean stopIndexing() {
         if (isIndexing) {
             if (forkJoinPool.isTerminating()) {
-                forkJoinPool.shutdown();
-                isIndexing = false;
+                stopForkJoinPool();
             }
 
             return true;
         }
 
         return false;
+    }
+
+    private void addTask(String url) {
+        forkJoinPool.invoke(new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, url, userAgent, referrer));
+    }
+
+    private  void stopForkJoinPool() {
+        forkJoinPool.shutdown();
+        isIndexing = false;
     }
 }
