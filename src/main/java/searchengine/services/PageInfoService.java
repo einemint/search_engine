@@ -14,11 +14,15 @@ public class PageInfoService {
 
     public void savePage(int siteId, String path, int code, String content) {
         Page page = new Page();
-        page.setSite_id(siteId);
+        page.setSiteId(siteId);
         page.setPath(path);
         page.setCode(code);
         page.setContent(content);
 
         pageRepository.save(page);
     };
+
+    public void deleteBySiteId(int siteId) {
+        pageRepository.deleteBySiteId(siteId);
+    }
 }

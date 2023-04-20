@@ -21,10 +21,10 @@ public class Site {
     @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')")
     private IndexingStatus status;
 
-    private LocalDateTime status_time;
+    private LocalDateTime statusTime;
 
     @Column(columnDefinition = "TEXT")
-    private String last_error;
+    private String lastError;
 
     @Column(columnDefinition = "VARCHAR(255)")
     private String url;

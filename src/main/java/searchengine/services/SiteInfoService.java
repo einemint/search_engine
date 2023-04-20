@@ -8,7 +8,6 @@ import searchengine.model.Site;
 import searchengine.repositories.SiteRepository;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,8 +18,8 @@ public class SiteInfoService {
     public int saveSite(IndexingStatus status, String lastError, String url, String name) {
         Site site = new Site();
         site.setStatus(status);
-        site.setStatus_time(LocalDateTime.now());
-        site.setLast_error(lastError);
+        site.setStatusTime(LocalDateTime.now());
+        site.setLastError(lastError);
         site.setUrl(url);
         site.setName(name);
         int id = siteRepository.save(site).getId();
@@ -33,8 +32,8 @@ public class SiteInfoService {
             Site site = siteRepository.findById(id).get();
             site.setId(id);
             site.setStatus(status);
-            site.setStatus_time(LocalDateTime.now());
-            site.setLast_error(lastError);
+            site.setStatusTime(LocalDateTime.now());
+            site.setLastError(lastError);
 
             siteRepository.save(site);
         }

@@ -1,8 +1,6 @@
 package searchengine.services;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import searchengine.config.Referrer;
 import searchengine.config.Site;
@@ -14,7 +12,6 @@ import searchengine.dto.statistics.StopIndexingResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,7 +50,10 @@ public class IndexingServiceImpl implements IndexingService {
 
             urlList = sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList());
 
+            int siteId = 0;
             for (String url : urlList) {
+                siteId = siteInfoService.deleteSiteByUrl(url);
+                pageInfoService.deleteBySiteId(siteId);
                 addTask(url);
             }
 

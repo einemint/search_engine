@@ -15,7 +15,7 @@ public class Page {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private int site_id;
+    private int siteId;
 
     @Column(columnDefinition = "VARCHAR(255)")
     private String path;

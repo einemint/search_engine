@@ -6,10 +6,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 import searchengine.config.Referrer;
 import searchengine.config.UserAgent;
 import searchengine.model.IndexingStatus;
@@ -136,9 +132,9 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
                     lastError = "NULL";
                 }
                 else {
-                    content = "Error status code";
+                    content = String.valueOf(response.statusCode());
                     indexingStatus = IndexingStatus.FAILED;
-                    lastError = "Ошибка индексации: главная страница сайта недоступна";
+                    lastError = "Ошибка индексации: страница недоступна";
                 }
 
                 return true;
