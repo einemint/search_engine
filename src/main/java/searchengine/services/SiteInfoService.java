@@ -8,6 +8,7 @@ import searchengine.model.Site;
 import searchengine.repositories.SiteRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +40,20 @@ public class SiteInfoService {
         }
     }
 
-    public int deleteSiteByUrl(String url) {
+    public void deleteById(int id) {
+        siteRepository.deleteById(id);
+    }
+
+    public int getIdByUrl(String url) {
         int id = 0;
         if (siteRepository.findByUrl(url).stream().findFirst().isPresent()) {
             id = siteRepository.findByUrl(url).stream().findFirst().get().getId();
         }
-        siteRepository.deleteByUrl(url);
 
         return id;
     }
+
+  public List<Site> getByStatus(IndexingStatus status) {
+        return siteRepository.findByStatus(status);
+  }
 }

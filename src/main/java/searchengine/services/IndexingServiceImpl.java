@@ -8,6 +8,7 @@ import searchengine.config.SitesList;
 import searchengine.config.UserAgent;
 import searchengine.dto.statistics.StartIndexingResponse;
 import searchengine.dto.statistics.StopIndexingResponse;
+import searchengine.model.IndexingStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ public class IndexingServiceImpl implements IndexingService {
     private SiteInfoService siteInfoService;
     @Autowired
     private PageInfoService pageInfoService;
-    private ForkJoinPool forkJoinPool = new ForkJoinPool();
+    private ForkJoinPool forkJoinPool;
     @Autowired
     private SitesList sitesList;
     @Autowired
@@ -45,21 +46,23 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public boolean startIndexing() {
+        forkJoinPool = new ForkJoinPool();
         if (!sitesList.getSites().isEmpty() && !isIndexing) {
             isIndexing = true;
 
             urlList = sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList());
 
-            int siteId = 0;
             for (String url : urlList) {
-                siteId = siteInfoService.deleteSiteByUrl(url);
-                pageInfoService.deleteBySiteId(siteId);
+                if (siteInfoService.getIdByUrl(url) != 0) {
+                    siteInfoService.deleteById(siteInfoService.getIdByUrl(url));
+                    pageInfoService.deleteBySiteId(siteInfoService.getIdByUrl(url));
+                }
                 addTask(url);
             }
 
             while (forkJoinPool.isTerminating()) {
                 if (!forkJoinPool.isTerminating()) {
-                    stopForkJoinPool();
+                    forkJoinPool.shutdown();
                     isIndexing = false;
                 }
             }
@@ -78,6 +81,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
         else {
             response.setResult(false);
+            response.setError("Индексация не запущена");
         }
 
         return response;
@@ -86,8 +90,13 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public boolean stopIndexing() {
         if (isIndexing) {
-            stopForkJoinPool();
-
+            forkJoinPool.shutdownNow();
+            isIndexing = false;
+            List<searchengine.model.Site> siteList = siteInfoService.getByStatus(IndexingStatus.INDEXING);
+            for (searchengine.model.Site site : siteList) {
+                System.out.println(site.getId());
+                siteInfoService.updateSite(site.getId(), IndexingStatus.FAILED, "Индексация остановлена пользователем");
+            }
             return true;
         }
 
@@ -95,11 +104,20 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private void addTask(String url) {
-        forkJoinPool.invoke(new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, url, userAgent, referrer));
+        IndexingRecursiveTask indexingRecursiveTask = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, url, userAgent, referrer);
+        forkJoinPool.invoke(indexingRecursiveTask);
+
+        changeIndexedSiteStatus(indexingRecursiveTask, url);
     }
 
-    private  void stopForkJoinPool() {
-        forkJoinPool.shutdownNow();
-        isIndexing = false;
+    private void changeIndexedSiteStatus(IndexingRecursiveTask task, String url) {
+        while (forkJoinPool.isTerminating()) {
+            if (task.isCompletedNormally()) {
+                siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.INDEXED, "");
+            }
+            else if (task.isCompletedAbnormally() && !task.isCancelled()) {
+                siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.FAILED, task.getException().getMessage());
+            }
+        }
     }
 }

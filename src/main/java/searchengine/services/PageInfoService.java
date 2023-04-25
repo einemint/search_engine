@@ -25,4 +25,8 @@ public class PageInfoService {
     public void deleteBySiteId(int siteId) {
         pageRepository.deleteBySiteId(siteId);
     }
+
+    public boolean isExistingPage(String path, int siteId) {
+        return pageRepository.findByPathAndSiteId(path, siteId).isEmpty();
+    }
 }
