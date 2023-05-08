@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Setter
 @RequiredArgsConstructor
 @Entity
-@Table(name = "page", indexes = @Index(columnList = "path"))
+@Table(name = "page")
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

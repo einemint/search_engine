@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: dev-0
+      author: einemint
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: path
+            indexName: idx_page
+            schemaName: search_engine
+            tableName: page
