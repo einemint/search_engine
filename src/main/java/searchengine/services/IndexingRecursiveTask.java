@@ -16,29 +16,24 @@ import java.util.List;
 import java.util.concurrent.RecursiveTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
     private SiteInfoService siteInfoService;
     private PageInfoService pageInfoService;
     private UserAgent userAgent;
     private Referrer referrer;
     private URL url;
-    private static UrlValidator urlValidator = new UrlValidator();
     private static List<String> allLinks = new ArrayList<>();
     private List<IndexingRecursiveTask> taskList = new ArrayList<>();
 
 
-    private Connection.Response response;
     private Document document;
     private static int siteId;
     private IndexingStatus indexingStatus;
     private String lastError;
-    private Elements links = new Elements();
+
 
     private String siteUrl;
-    private String formattedSiteUrl;
     private List<String> urlList;
-    private List<Pattern> patternList = new ArrayList<>();
     private List<Matcher> matcherList = new ArrayList<>();
 
     private boolean isMatch = true;
@@ -56,8 +51,9 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
 
         this.siteUrl = siteUrl;
 
+        List<Pattern> patternList = new ArrayList<>();
         for (String urlAddress : urlList) {
-            this.patternList.add(Pattern.compile(urlAddress));
+            patternList.add(Pattern.compile(urlAddress));
         }
         for (Pattern pattern : patternList) {
             this.matcherList.add(pattern.matcher(siteUrl));
@@ -73,9 +69,8 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         }
 
         if (parseUrl(siteUrl)) {
-            code = response.statusCode();
-            formattedSiteUrl = url.getPath();
-            links = document.select("a[href]");
+            String formattedSiteUrl = url.getPath();
+            Elements links = document.select("a[href]");
 
             if (formattedSiteUrl.isEmpty() && isMatch && code != 0) {
                 siteId = siteInfoService.saveSite(indexingStatus, lastError, siteUrl, document.title());
@@ -117,13 +112,17 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
     }
 
     private boolean parseUrl(String siteUrl) {
+        UrlValidator urlValidator = new UrlValidator();
+
         if (urlValidator.isValid(siteUrl)) {
             indexingStatus = IndexingStatus.INDEXING;
-            try {
+            try {;
                 url = new URL(siteUrl);
-                response = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
+                Connection.Response response = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
                         .referrer(referrer.getReferrer())
                         .execute();
+                code = response.statusCode();
+
                 if (response.statusCode() == 200) {
                     document = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
                             .referrer(referrer.getReferrer())
