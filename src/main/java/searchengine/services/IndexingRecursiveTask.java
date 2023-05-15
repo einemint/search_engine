@@ -27,21 +27,20 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
 
 
     private Document document;
-    private static int siteId;
+
     private IndexingStatus indexingStatus;
     private String lastError;
 
-
+    private int siteId;
     private String siteUrl;
     private List<String> urlList;
     private List<Matcher> matcherList = new ArrayList<>();
 
-    private boolean isMatch = true;
     private String content;
     private int code;
 
     public IndexingRecursiveTask(SiteInfoService siteInfoService, PageInfoService pageInfoService, List<String> urlList, String siteUrl,
-                                 UserAgent userAgent, Referrer referrer) {
+                                 UserAgent userAgent, Referrer referrer, int siteId) {
         this.siteInfoService = siteInfoService;
         this.pageInfoService = pageInfoService;
         this.userAgent = userAgent;
@@ -50,6 +49,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         this.urlList = urlList;
 
         this.siteUrl = siteUrl;
+        this.siteId = siteId;
 
         List<Pattern> patternList = new ArrayList<>();
         for (String urlAddress : urlList) {
@@ -67,14 +67,14 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+        boolean isMatch = isInnerPage();
+        if (!isMatch) return allLinks;
 
         if (parseUrl(siteUrl)) {
             String formattedSiteUrl = url.getPath();
             Elements links = document.select("a[href]");
 
-            if (formattedSiteUrl.isEmpty() && isMatch && code != 0) {
-                siteId = siteInfoService.saveSite(indexingStatus, lastError, siteUrl, document.title());
-            } else if (!formattedSiteUrl.isEmpty() && isMatch && code != 0) {
+            if (!formattedSiteUrl.isEmpty() && code != 0) {
                 if (pageInfoService.isExistingPage(formattedSiteUrl, siteId)) {
                     pageInfoService.savePage(siteId, formattedSiteUrl, code, content);
                     siteInfoService.updateSite(siteId, indexingStatus, lastError);
@@ -103,7 +103,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
             String linkAddress = link.attr("abs:href");
 
             if (!linkAddress.contains("#")) {
-                IndexingRecursiveTask task = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, linkAddress, userAgent, referrer);
+                IndexingRecursiveTask task = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, linkAddress, userAgent, referrer, siteId);
                 task.fork();
                 taskList.add(task);
             }
@@ -147,11 +147,12 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         return false;
     }
 
-    private void isInnerPage() {
+    private boolean isInnerPage() {
         for (Matcher matcher : matcherList) {
             if (matcher.find()) {
-                isMatch = true;
+                return true;
             }
         }
+        return false;
     }
 }

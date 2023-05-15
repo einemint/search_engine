@@ -31,7 +31,6 @@ public class SiteInfoService {
     public void updateSite(int id, IndexingStatus status, String lastError) {
         if (siteRepository.findById(id).isPresent()) {
             Site site = siteRepository.findById(id).get();
-            site.setId(id);
             site.setStatus(status);
             site.setStatusTime(LocalDateTime.now());
             site.setLastError(lastError);

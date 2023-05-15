@@ -28,7 +28,6 @@ public class IndexingServiceImpl implements IndexingService {
     private UserAgent userAgent;
     @Autowired
     private Referrer referrer;
-    private List<String> urlList = new ArrayList<>();
     private boolean isIndexing = false;
     @Override
     public StartIndexingResponse getStartIndexing() {
@@ -50,15 +49,7 @@ public class IndexingServiceImpl implements IndexingService {
         if (!sitesList.getSites().isEmpty() && !isIndexing) {
             isIndexing = true;
 
-            urlList = sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList());
-
-            for (String url : urlList) {
-                if (siteInfoService.getIdByUrl(url) != 0) {
-                    siteInfoService.deleteById(siteInfoService.getIdByUrl(url));
-                    pageInfoService.deleteBySiteId(siteInfoService.getIdByUrl(url));
-                }
-                addTask(url);
-            }
+            updateSitesInDB(sitesList.getSites());
 
             while (forkJoinPool.isTerminating()) {
                 if (!forkJoinPool.isTerminating()) {
@@ -103,8 +94,8 @@ public class IndexingServiceImpl implements IndexingService {
         return false;
     }
 
-    private void addTask(String url) {
-        IndexingRecursiveTask indexingRecursiveTask = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, url, userAgent, referrer);
+    private void addTask(String url, int siteId) {
+        IndexingRecursiveTask indexingRecursiveTask = new IndexingRecursiveTask(siteInfoService, pageInfoService, sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList()), url, userAgent, referrer, siteId);
         forkJoinPool.invoke(indexingRecursiveTask);
 
         changeIndexedSiteStatus(indexingRecursiveTask, url);
@@ -118,6 +109,19 @@ public class IndexingServiceImpl implements IndexingService {
             else if (task.isCompletedAbnormally() && !task.isCancelled()) {
                 siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.FAILED, task.getException().getMessage());
             }
+        }
+    }
+
+    private void updateSitesInDB(List<Site> siteList) {
+        for (Site site : siteList) {
+            if (siteInfoService.getIdByUrl(site.getUrl()) != 0) {
+                siteInfoService.deleteById(siteInfoService.getIdByUrl(site.getUrl()));
+                pageInfoService.deleteBySiteId(siteInfoService.getIdByUrl(site.getUrl()));
+            }
+
+            int id = siteInfoService.saveSite(IndexingStatus.INDEXING, "", site.getUrl(), site.getName());
+
+            addTask(site.getUrl(), id);
         }
     }
 }
