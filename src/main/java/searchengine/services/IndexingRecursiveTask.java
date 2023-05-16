@@ -1,11 +1,13 @@
 package searchengine.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
 import searchengine.config.Referrer;
 import searchengine.config.UserAgent;
 import searchengine.model.IndexingStatus;
@@ -16,13 +18,14 @@ import java.util.List;
 import java.util.concurrent.RecursiveTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
+
+@Slf4j
+public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveTask>> {
     private SiteInfoService siteInfoService;
     private PageInfoService pageInfoService;
     private UserAgent userAgent;
     private Referrer referrer;
     private URL url;
-    private static List<String> allLinks = new ArrayList<>();
     private List<IndexingRecursiveTask> taskList = new ArrayList<>();
 
 
@@ -61,14 +64,14 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
     }
 
     @Override
-    protected List<String> compute() {
+    protected List<IndexingRecursiveTask> compute() {
         try {
             Thread.sleep(600);
         } catch (Exception exception) {
-            exception.printStackTrace();
+            log.error(exception.getMessage());
         }
         boolean isMatch = isInnerPage();
-        if (!isMatch) return allLinks;
+        if (!isMatch) return taskList;
 
         if (parseUrl(siteUrl)) {
             String formattedSiteUrl = url.getPath();
@@ -87,7 +90,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
         }
         addResultsFromTasks(taskList);
 
-        return allLinks;
+        return taskList;
     }
 
     private void addResultsFromTasks(List<IndexingRecursiveTask> taskList)
@@ -107,7 +110,6 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
                 task.fork();
                 taskList.add(task);
             }
-            allLinks.add(linkAddress);
         }
     }
 
@@ -138,7 +140,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
 
                 return true;
             } catch (Exception exception) {
-                exception.printStackTrace();
+                log.error(exception.getMessage());
 
                 return false;
             }

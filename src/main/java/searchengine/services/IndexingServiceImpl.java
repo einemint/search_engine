@@ -85,7 +85,6 @@ public class IndexingServiceImpl implements IndexingService {
             isIndexing = false;
             List<searchengine.model.Site> siteList = siteInfoService.getByStatus(IndexingStatus.INDEXING);
             for (searchengine.model.Site site : siteList) {
-                System.out.println(site.getId());
                 siteInfoService.updateSite(site.getId(), IndexingStatus.FAILED, "Индексация остановлена пользователем");
             }
             return true;
@@ -115,8 +114,8 @@ public class IndexingServiceImpl implements IndexingService {
     private void updateSitesInDB(List<Site> siteList) {
         for (Site site : siteList) {
             if (siteInfoService.getIdByUrl(site.getUrl()) != 0) {
-                siteInfoService.deleteById(siteInfoService.getIdByUrl(site.getUrl()));
                 pageInfoService.deleteBySiteId(siteInfoService.getIdByUrl(site.getUrl()));
+                siteInfoService.deleteById(siteInfoService.getIdByUrl(site.getUrl()));
             }
 
             int id = siteInfoService.saveSite(IndexingStatus.INDEXING, "", site.getUrl(), site.getName());
