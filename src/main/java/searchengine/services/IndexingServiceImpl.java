@@ -10,7 +10,6 @@ import searchengine.dto.statistics.StartIndexingResponse;
 import searchengine.dto.statistics.StopIndexingResponse;
 import searchengine.model.IndexingStatus;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
@@ -103,7 +102,7 @@ public class IndexingServiceImpl implements IndexingService {
     private void changeIndexedSiteStatus(IndexingRecursiveTask task, String url) {
         while (forkJoinPool.isTerminating()) {
             if (task.isCompletedNormally()) {
-                siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.INDEXED, "");
+                siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.INDEXED, null);
             }
             else if (task.isCompletedAbnormally() && !task.isCancelled()) {
                 siteInfoService.updateSite(siteInfoService.getIdByUrl(url), IndexingStatus.FAILED, task.getException().getMessage());
