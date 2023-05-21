@@ -1,10 +1,10 @@
 package searchengine.services;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -13,24 +13,20 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class LemmatizationService {
     private static LuceneMorphology luceneMorphRus;
     private static LuceneMorphology luceneMorphEng;
 
-    private Pattern rusPattern;
-    private Pattern engPattern;
+    private static final Pattern RUS_PATTERN = Pattern.compile("[а-яё]+");
+    private static final Pattern ENG_PATTERN = Pattern.compile("[a-z]+");
 
-    public void init() {
+    public LemmatizationService() {
         try {
             this.luceneMorphRus = new RussianLuceneMorphology();
             this.luceneMorphEng = new EnglishLuceneMorphology();
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
-
-        this.rusPattern = Pattern.compile("[а-яё]+");
-        this.engPattern = Pattern.compile("[a-z]+");
     }
 
     public Map<String, Integer> getLemmasWithFrequency(String text) {
@@ -101,14 +97,18 @@ public class LemmatizationService {
     }
 
     private boolean isRus(String lemma) {
-        Matcher rusMatcher = rusPattern.matcher(lemma);
+        Matcher rusMatcher = RUS_PATTERN.matcher(lemma);
         if (rusMatcher.matches()) return true;
         else return false;
     }
 
     private boolean isEng(String lemma) {
-        Matcher engMatcher = engPattern.matcher(lemma);
+        Matcher engMatcher = ENG_PATTERN.matcher(lemma);
         if (engMatcher.matches()) return true;
         else return false;
+    }
+
+    private String getTextFromHtml(String html) {
+        return Jsoup.parse(html).text();
     }
 }

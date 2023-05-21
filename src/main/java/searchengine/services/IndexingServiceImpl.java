@@ -6,6 +6,7 @@ import searchengine.config.Referrer;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.config.UserAgent;
+import searchengine.dto.statistics.IndexPageResponse;
 import searchengine.dto.statistics.StartIndexingResponse;
 import searchengine.dto.statistics.StopIndexingResponse;
 import searchengine.model.IndexingStatus;
@@ -75,6 +76,16 @@ public class IndexingServiceImpl implements IndexingService {
         }
 
         return response;
+    }
+
+    @Override
+    public boolean indexPage() {
+        return false;
+    }
+
+    @Override
+    public IndexPageResponse getIndexPage(String url) {
+        return null;
     }
 
     @Override
