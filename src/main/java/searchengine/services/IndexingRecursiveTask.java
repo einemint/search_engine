@@ -11,21 +11,22 @@ import searchengine.config.Referrer;
 import searchengine.config.UserAgent;
 import searchengine.model.IndexingStatus;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
-public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveTask>> {
+public class IndexingRecursiveTask extends RecursiveTask<List<String>> {
     private SiteInfoService siteInfoService;
     private PageInfoService pageInfoService;
     private UserAgent userAgent;
     private Referrer referrer;
     private URL url;
-    private List<IndexingRecursiveTask> taskList = new ArrayList<>();
+
+    private static List<String> allLinks = new ArrayList<>();
+    private static List<IndexingRecursiveTask> taskList = new ArrayList<>();
 
 
     private Document document;
@@ -36,7 +37,6 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
     private int siteId;
     private String siteUrl;
     private List<String> urlList;
-    private List<Matcher> matcherList = new ArrayList<>();
 
     private String content;
     private int code;
@@ -52,25 +52,17 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
 
         this.siteUrl = siteUrl;
         this.siteId = siteId;
-
-        List<Pattern> patternList = new ArrayList<>();
-        for (String urlAddress : urlList) {
-            patternList.add(Pattern.compile(urlAddress));
-        }
-        for (Pattern pattern : patternList) {
-            this.matcherList.add(pattern.matcher(siteUrl));
-        }
     }
 
     @Override
-    protected List<IndexingRecursiveTask> compute() {
+    protected List<String> compute() {
         try {
             Thread.sleep(600);
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
         boolean isMatch = isInnerPage();
-        if (!isMatch) return taskList;
+        if (!isMatch) return allLinks;
 
         if (parseUrl(siteUrl)) {
             String formattedSiteUrl = url.getPath();
@@ -89,7 +81,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
         }
         addResultsFromTasks(taskList);
 
-        return taskList;
+        return allLinks;
     }
 
     private void addResultsFromTasks(List<IndexingRecursiveTask> taskList)
@@ -104,11 +96,13 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
         for (Element link : links) {
             String linkAddress = link.attr("abs:href");
 
-            if (!linkAddress.contains("#")) {
+            if (!allLinks.contains(linkAddress) && !linkAddress.contains("#")) {
                 IndexingRecursiveTask task = new IndexingRecursiveTask(siteInfoService, pageInfoService, urlList, linkAddress, userAgent, referrer, siteId);
                 task.fork();
                 taskList.add(task);
             }
+
+            allLinks.add(linkAddress);
         }
     }
 
@@ -117,7 +111,7 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
 
         if (urlValidator.isValid(siteUrl)) {
             indexingStatus = IndexingStatus.INDEXING;
-            try {;
+            try {
                 url = new URL(siteUrl);
                 Connection.Response response = Jsoup.connect(siteUrl).ignoreContentType(true).userAgent(userAgent.getUserAgent())
                         .referrer(referrer.getReferrer())
@@ -149,11 +143,22 @@ public class IndexingRecursiveTask extends RecursiveTask<List<IndexingRecursiveT
     }
 
     private boolean isInnerPage() {
-        for (Matcher matcher : matcherList) {
-            if (matcher.find()) {
-                return true;
+        try {
+            URI siteUri = new URI(siteUrl);
+            String siteDomain = siteUri.getHost();
+            String siteDomainName = siteDomain.startsWith("www.") ? siteDomain.substring(4) : siteDomain;
+
+            for (String urlFromList : urlList) {
+                URI urlFromListUri = new URI(urlFromList);
+                String urlFromListDomain = urlFromListUri.getHost();
+                String urlFromListDomainName = urlFromListDomain.startsWith("www.") ? urlFromListDomain.substring(4) : urlFromListDomain;
+
+                if (siteDomainName.contains(urlFromListDomainName)) return true;
             }
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
         }
+
         return false;
     }
 }

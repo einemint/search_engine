@@ -28,3 +28,7 @@ indexing-settings:
       name: PlayBack.Ru
   user-agent: einemint's search bot
   referrer: http://www.google.com
+
+logging:
+  file:
+    name: logs/application-debug.log
