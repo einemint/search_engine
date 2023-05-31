@@ -1,3 +1,9 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changeset/dev-0.yaml
+  - include:
+      file: db/changelog/changeset/dev-1.yaml
+  - include:
+      file: db/changelog/changeset/dev-2.yaml
+  - include:
+      file: db/changelog/changeset/dev-3.yaml

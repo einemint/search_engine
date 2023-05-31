@@ -1,40 +1,31 @@
 databaseChangeLog:
   - changeSet:
-      id: dev-0
+      id: dev-2
       author: einemint
       changes:
         - createTable:
-            tableName: site
-            remarks: Сайты
+            tableName: lemma
+            remarks: Леммы
             columns:
               - column:
                   name: id
                   type: integer
                   constraints:
                     primaryKey: true
-                    primaryKeyName: site_pk
+                    primaryKeyName: lemma_pk
                     nullable: false
               - column:
-                  name: status
+                  name: site_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lemma
                   type: varchar(255)
                   constraints:
                     nullable: false
               - column:
-                  name: status_time
-                  type: datetime
+                  name: frequency
+                  type: integer
                   constraints:
                     nullable: false
-              - column:
-                  name: last_error
-                  type: varchar(255)
-              - column:
-                  name: url
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: name
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-

@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: dev-3
+      author: einemint
+      changes:
+        - createTable:
+            tableName: 'index'
+            remarks: Индекс
+            columns:
+              - column:
+                  name: id
+                  type: integer
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: idx_px
+                    nullable: false
+              - column:
+                  name: page_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lemma_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: 'rank'
+                  type: float
+                  constraints:
+                    nullable: false

@@ -1,40 +1,42 @@
 databaseChangeLog:
   - changeSet:
-      id: dev-0
+      id: dev-1
       author: einemint
       changes:
         - createTable:
-            tableName: site
-            remarks: Сайты
+            tableName: page
             columns:
               - column:
                   name: id
                   type: integer
                   constraints:
                     primaryKey: true
-                    primaryKeyName: site_pk
+                    primaryKeyName: page_pk
                     nullable: false
               - column:
-                  name: status
+                  name: site_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: path
                   type: varchar(255)
                   constraints:
                     nullable: false
               - column:
-                  name: status_time
-                  type: datetime
+                  name: code
+                  type: integer
                   constraints:
                     nullable: false
               - column:
-                  name: last_error
-                  type: varchar(255)
-              - column:
-                  name: url
-                  type: varchar(255)
+                  name: content
+                  type: clob
                   constraints:
                     nullable: false
+        - createIndex:
+            columns:
               - column:
-                  name: name
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-
+                  name: path
+            indexName: idx_page
+            schemaName: search_engine
+            tableName: page
