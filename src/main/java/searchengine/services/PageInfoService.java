@@ -20,7 +20,11 @@ public class PageInfoService {
         page.setContent(content);
 
         pageRepository.save(page);
-    };
+    }
+
+    public void savePageFromObject(Page page) {
+        pageRepository.save(page);
+    }
 
     public void deleteBySiteId(int siteId) {
         pageRepository.deleteBySiteId(siteId);
@@ -28,5 +32,9 @@ public class PageInfoService {
 
     public boolean isExistingPage(String path, int siteId) {
         return pageRepository.findByPathAndSiteId(path, siteId).isEmpty();
+    }
+
+    public Page getPageByPathAndSiteId(String path, int siteId) {
+        return pageRepository.findByPathAndSiteId(path, siteId).get(0);
     }
 }

@@ -9,6 +9,6 @@ public interface IndexingService {
     StartIndexingResponse getStartIndexing();
     boolean stopIndexing();
     StopIndexingResponse getStopIndexing();
-    boolean indexPage();
+    boolean indexPage(String url);
     IndexPageResponse getIndexPage(String url);
 }

@@ -79,12 +79,20 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public boolean indexPage() {
-        return false;
+    public boolean indexPage(String url) {
+        IndexingTask indexingTask = new IndexingTask(siteInfoService, pageInfoService, sitesList.getSites().stream().map(Site::getUrl).collect(Collectors.toList()), url, userAgent, referrer);
+        return indexingTask.indexPage();
     }
 
     @Override
     public IndexPageResponse getIndexPage(String url) {
+        IndexPageResponse response = new IndexPageResponse();
+        if (indexPage(url)) {
+            response.setResult(true);
+        } else {
+            response.setResult(false);
+            response.setError("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+        }
         return null;
     }
 
